@@ -10,16 +10,16 @@ module ScimRails
     private
 
     def set_current_site
-      @site ||= Site.find(doorkeeper_token.aud)
+      @site ||= Site.find(@token_payload['aud'])
     end
 
     def validate_jwt_token!
-      ::JWT.decode(
+      @token_payload = ::JWT.decode(
         doorkeeper_token.token,
         OpenSSL::PKey::RSA.new(File.read(Doorkeeper::JWT.configuration.secret_key_path)),
         true,
         { algorithm: Doorkeeper::JWT.configuration.encryption_method.to_s.upcase }
-      )
+      ).first
     rescue DecodeError
       # TODO: Revoke the token
       head :unauthorized
