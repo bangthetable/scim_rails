@@ -1,15 +1,15 @@
 module ScimRails
   class ApplicationController < ActionController::API
-    include ActionController::HttpAuthentication::Basic::ControllerMethods
     include ExceptionHandler
     include Response
 
-    before_action :find_site
+    before_action :doorkeeper_authorize!
+    before_action :set_current_site
 
     private
 
-    def find_site
-      @site = Site.first
+    def set_current_site
+      @site ||= Site.first
     end
   end
 end
