@@ -35,10 +35,22 @@ module ScimRails
         find_by_username[username_key] = permitted_user_params[username_key]
         user = @site
           .public_send(ScimRails.config.scim_users_scope)
-          .find_or_create_by(find_by_username)
-        user.update!(permitted_user_params)
+          .find_by(find_by_username)
+
+        if user.present?
+          user.update!(permitted_user_params)
+          json_scim_response(object: user, status: :created)
+        else
+          user = @site.users.new permitted_user_params
+          user.skip_password = true
+          user.skip_auth_token = true
+          user.confirmation_required = false
+          user.skip_confirmation!
+          user.save!
+          json_scim_response(object: user, status: :created)
+        end
       end
-      json_scim_response(object: user, status: :created)
+
     end
 
     def show
@@ -52,10 +64,9 @@ module ScimRails
       json_scim_response(object: user)
     end
 
-    # TODO: PATCH will only deprovision or reprovision users.
-    # This will work just fine for Okta but is not SCIM compliant.
     def patch_update
       user = @site.public_send(ScimRails.config.scim_users_scope).find(params[:id])
+      user.update!(permitted_user_params)
       json_scim_response(object: user)
     end
 
